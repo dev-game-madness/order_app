@@ -1,3 +1,22 @@
 <resources>
-    <string name="app_name">OrdersApp</string>
+    <string name="app_name">СтройЗаказ</string>
+
+    <string name="hint_email">Введите почту</string>
+    <string name="hint_pass">Введите пароль</string>
+    <string name="hint2_pass">Повторите пароль</string>
+
+    <string name="btn_login">Войти</string>
+    <string name="btn_reg">Создать</string>
+
+    <string name="account_n">Не зарегистрированы?</string>
+    <string name="account_y">Уже есть аккаунт?</string>
+
+    <string name="link_reg">Создать аккаунт</string>
+    <string name="link_log">Войти</string>
+
+    <string name="hello_title">Добро пожаловать!</string>
+    <string name="hello_login">Войдите в аккаунт СтройЗаказ</string>
+    <string name="hello_reg">Создайте аккаунт СтройЗаказ</string>
+
+
 </resources>
