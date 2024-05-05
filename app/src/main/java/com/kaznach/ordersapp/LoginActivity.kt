@@ -10,6 +10,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.result.Result
 import com.google.android.material.snackbar.Snackbar
@@ -23,6 +25,12 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.login_page)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginPage)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         val linkToReg: TextView = findViewById(R.id.regLink)
         linkToReg.setOnClickListener {
@@ -40,21 +48,19 @@ class LoginActivity : AppCompatActivity() {
             val password = userPassword.text.toString().trim()
 
             fun EditText.checkEmpty(errorMessage: String) {
-                if (text.isEmpty()) setError(errorMessage)
+                if (text.isEmpty()) error = errorMessage
             }
 
             if (listOf(userEmail, userPassword).any { it.text.isEmpty() }) {
-                userEmail.checkEmpty("Почта не может быть пустой!")
-                userPassword.checkEmpty("Пароль не может быть пустым!")
+                userEmail.checkEmpty("Почта не может быть пустой")
+                userPassword.checkEmpty("Пароль не может быть пустым")
             }
             else
                 userLogin(email, password)
         }
-
     }
 
     private fun userLogin(email: String, password: String) {
-
         val jsonBody = """
                 {
                   "email": "${email}",
@@ -66,37 +72,40 @@ class LoginActivity : AppCompatActivity() {
             .header("Content-Type" to "application/json")
             .body(jsonBody)
             .responseString { _, response, result ->
-                when (result) {
-                    is Result.Failure -> {
-                        val ex = result.getException()
-                        val statusCode = ex.response.statusCode
-                        val errorBody = ex.response.body().asString("application/json")  // Получаем тело ответа как JSON
-                        val errorMessage = when (statusCode) {
-                            400 -> "Ошибка: Необработанное исключение"
-                            401 -> "Ошибка: Неверный логин или пароль"
-                            409 -> "Ошибка: Пользователя с таким email не существует"
-                            else -> try {
-                                // Попытаемся получить сообщение об ошибке из JSON
-                                JSONObject(errorBody).getString("login_error")
-                            } catch (e: JSONException) {
-                                "Ошибка: ${ex.message}"  // Если JSON невалиден, используем общее сообщение
-                            }
+                when (response.statusCode) {
+                    200 -> {
+                        val data = result.get()
+                        val jsonObject = JSONObject(data)
+                        val receivedToken = jsonObject.getString("token")
+                        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+                        val sharedPrefs = EncryptedSharedPreferences.create(
+                            "auth",
+                            masterKeyAlias,
+                            applicationContext,
+                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                        )
+                        with(sharedPrefs.edit()) {
+                            putString("token", receivedToken)
+                            apply()
                         }
-                        Log.e("Fuel", errorMessage)
-                        Snackbar.make(findViewById(R.id.loginPage), errorMessage, Snackbar.LENGTH_LONG).show()
+                        val intent = Intent(this, MainActivity::class.java)
+                        startActivity(intent)
+                        finish()
                     }
-                    is Result.Success -> {
-                        val statusCode = response.statusCode
-                        if (statusCode == 200) {
-                            val intent = Intent(this, MainActivity::class.java)
-                            startActivity(intent)
-                        } else {
-                            // Неожиданный код ответа
-                            Log.w("Fuel", "Неожиданный код ответа: $statusCode")
-                        }
+                    401 -> showError("Неверный логин или пароль")
+                    409 -> showError("Пользователя с такой почтой не существует")
+                    else -> {
+                        val data = result.get()
+                        val errorMessage = "Ошибка: $data. Код ответа: ${response.statusCode}"
+                        Log.w("Fuel", errorMessage)
+                        showError(errorMessage)
                     }
                 }
             }
 
+    }
+    private fun showError(message: String) {
+        Snackbar.make(findViewById(R.id.loginPage), message, Snackbar.LENGTH_LONG).show()
     }
 }

@@ -6,25 +6,27 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.extensions.authentication
-import com.github.kittinunf.result.Result
 import com.google.android.material.snackbar.Snackbar
-import org.json.JSONException
-import org.json.JSONObject
 
 const val regURL = "http://192.168.1.104:5000/api/v1/users/reg"
+const val fullRegURL = "http://192.168.1.104:5000/api/v1/users/fullreg"
 
 class RegistrationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.registration_page)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.registrationPage)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         val linkToLog: TextView = findViewById(R.id.logLink)
         linkToLog.setOnClickListener {
@@ -44,17 +46,17 @@ class RegistrationActivity : AppCompatActivity() {
             val repassword = userRePassword.text.toString().trim()
 
             fun EditText.checkEmpty(errorMessage: String) {
-                if (text.isEmpty()) setError(errorMessage)
+                if (text.isEmpty()) error = errorMessage
             }
 
             if (listOf(userEmail, userPassword, userRePassword).any { it.text.isEmpty() }) {
-                userEmail.checkEmpty("Почта не может быть пустой!")
-                userPassword.checkEmpty("Пароль не может быть пустым!")
-                userRePassword.checkEmpty("Повторите пароль!")
+                userEmail.checkEmpty("Почта не может быть пустой")
+                userPassword.checkEmpty("Пароль не может быть пустым")
+                userRePassword.checkEmpty("Повторите пароль")
             }
             else
                 if (password != repassword) {
-                    userRePassword.setError("Пароли не совпадают!")
+                    userRePassword.error = "Пароли не совпадают"
                 }
                 else
                     userRegistration(email, password)
@@ -63,48 +65,34 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun userRegistration(email: String, password: String) {
-
         val jsonBody = """
-                {
-                  "email": "${email}",
-                  "password": "${password}"
-                }
-                """.trimIndent()
+            {
+              "email": "${email}",
+              "password": "${password}"
+            }
+            """.trimIndent()
 
         Fuel.post(regURL)
             .header("Content-Type" to "application/json")
             .body(jsonBody)
             .responseString { _, response, result ->
-                when (result) {
-                    is Result.Failure -> {
-                        val ex = result.getException()
-                        val statusCode = ex.response.statusCode
-                        val errorBody = ex.response.body().asString("application/json")  // Получаем тело ответа как JSON
-                        val errorMessage = when (statusCode) {
-                            400 -> "Ошибка: Неверные данные"
-                            409 -> "Ошибка: Пользователь с таким email уже существует"
-                            else -> try {
-                                // Попытаемся получить сообщение об ошибке из JSON
-                                JSONObject(errorBody).getString("error")
-                            } catch (e: JSONException) {
-                                "Ошибка: ${ex.message}"  // Если JSON невалиден, используем общее сообщение
-                            }
-                        }
-                        Log.e("Fuel", errorMessage)
-                        Snackbar.make(findViewById(R.id.registrationPage), errorMessage, Snackbar.LENGTH_LONG).show()
+                when (response.statusCode) {
+                    201 -> {
+                        val intent = Intent(this, LoginActivity::class.java)
+                        startActivity(intent)
+                        finish()
                     }
-                    is Result.Success -> {
-                        val statusCode = response.statusCode
-                        if (statusCode == 201) {
-                            val intent = Intent(this, MainActivity::class.java)
-                            startActivity(intent)
-                        } else {
-                            // Неожиданный код ответа
-                            Log.w("Fuel", "Неожиданный код ответа: $statusCode")
-                        }
+                    409 -> showError("Пользователь с такой почтой уже существует")
+                    else -> {
+                        val data = result.get()
+                        val errorMessage = "Непредвиденная ошибка ${data}. Код ответа: ${response.statusCode}"
+                        Log.w("Fuel", errorMessage)
+                        showError(errorMessage)
                     }
                 }
             }
-
+    }
+    private fun showError(message: String) {
+        Snackbar.make(findViewById(R.id.registrationPage), message, Snackbar.LENGTH_LONG).show()
     }
 }
