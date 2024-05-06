@@ -70,36 +70,54 @@ class LoginActivity : AppCompatActivity() {
 
         Fuel.post(logURL)
             .header("Content-Type" to "application/json")
+            .timeoutRead(3000)
             .body(jsonBody)
             .responseString { _, response, result ->
-                when (response.statusCode) {
-                    200 -> {
-                        val data = result.get()
-                        val jsonObject = JSONObject(data)
-                        val receivedToken = jsonObject.getString("token")
-                        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-                        val sharedPrefs = EncryptedSharedPreferences.create(
-                            "auth",
-                            masterKeyAlias,
-                            applicationContext,
-                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                        )
-                        with(sharedPrefs.edit()) {
-                            putString("token", receivedToken)
-                            apply()
+                when (result) {
+                    is Result.Failure -> {
+                        when (response.statusCode) {
+                            401 -> showError("Неверный логин или пароль")
+                            409 -> showError("Пользователя с такой почтой не существует")
+                            else -> {
+                                val ex = result.getException()
+                                val errorData = ex.response.data
+                                val errorMessage = String(errorData, Charsets.UTF_8) // Получаем сообщение об ошибке из ответа
+                                Log.e("Fuel", "Ошибка входа: $errorMessage")
+                                showError(errorMessage)
+                            }
                         }
-                        val intent = Intent(this, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
+
                     }
-                    401 -> showError("Неверный логин или пароль")
-                    409 -> showError("Пользователя с такой почтой не существует")
-                    else -> {
-                        val data = result.get()
-                        val errorMessage = "Ошибка: $data. Код ответа: ${response.statusCode}"
-                        Log.w("Fuel", errorMessage)
-                        showError(errorMessage)
+                    is Result.Success -> {
+                        when (response.statusCode) {
+                            200 -> {
+                                val data = result.get()
+                                val jsonObject = JSONObject(data)
+                                val receivedToken = jsonObject.getString("token")
+                                val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+                                val sharedPrefs = EncryptedSharedPreferences.create(
+                                    "auth",
+                                    masterKeyAlias,
+                                    applicationContext,
+                                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                                )
+                                with(sharedPrefs.edit()) {
+                                    putString("token", receivedToken)
+                                    apply()
+                                }
+                                val intent = Intent(this, MainActivity::class.java)
+                                startActivity(intent)
+                                finish()
+                            }
+
+                            else -> {
+                                val data = result.get()
+                                val errorMessage = "Ошибка: $data. Код ответа: ${response.statusCode}"
+                                Log.w("Fuel", errorMessage)
+                                showError(errorMessage)
+                            }
+                        }
                     }
                 }
             }

@@ -74,6 +74,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         Fuel.post(regURL)
             .header("Content-Type" to "application/json")
+            .timeoutRead(3000)
             .body(jsonBody)
             .responseString { _, response, result ->
                 when (response.statusCode) {

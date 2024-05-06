@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/myProfile"
+        android:icon="@drawable/menuiconprofile"
+        app:showAsAction="always" >
+        <menu >
+            <item
+                android:id="@+id/ItemMyProfile"
+                android:icon="@drawable/iconprofile"
+                android:title="Мой профиль"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/ItemMyOrders"
+                android:icon="@drawable/iconmyorders"
+                android:title="Мои заказы"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/ItemOrders"
+                android:icon="@drawable/iconorders"
+                android:title="Все заказы"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/ItemExit"
+                android:icon="@drawable/iconlogout"
+                android:title="Выход"
+                app:showAsAction="never"/>
+        </menu>
+    </item>
+
+</menu>
