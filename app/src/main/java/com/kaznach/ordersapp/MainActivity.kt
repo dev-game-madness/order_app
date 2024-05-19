@@ -24,6 +24,8 @@ import androidx.appcompat.widget.Toolbar
 
 const val checkURL = "http://192.168.1.104:5000/api/v1/sessions/check"
 const val checkConnURL = "http://192.168.1.104:5000/api/v1/connection/check"
+const val logoutURL = "http://192.168.1.104:5000/api/v1/users/logout"
+const val profileURL = "http://192.168.1.104:5000/api/v1/users/profile"
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,7 +41,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.ItemMyProfile -> {
+                val intent = Intent(this, MyProfileActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.ItemMyOrders -> {
+                true
+            }
+            R.id.ItemOrders -> {
+                true
+            }
             R.id.ItemExit -> {
+                closeSession()
                 logoutUser()
                 true
             }
@@ -88,6 +102,29 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun closeSession() {
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+        val sharedPrefs = EncryptedSharedPreferences.create(
+            "auth",
+            masterKeyAlias,
+            applicationContext,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        val token = sharedPrefs.getString("token", null)
+
+        if (token != null) {
+            Fuel.put(logoutURL)
+                .header("Authorization" to "Bearer $token")
+                .timeout(3000)
+                .response { _, _, _ -> }
+        } else {
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+    }
+
     private fun logoutUser() {
         val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         val sharedPrefs = EncryptedSharedPreferences.create(
@@ -115,11 +152,16 @@ class MainActivity : AppCompatActivity() {
         if (isNetworkAvailable()) {
             Fuel.head(checkConnURL)
                 .timeout(2000)
-                .response { _, response, _ ->
-                    completion(response.statusCode == 200)
+                .response { request, response, result ->
+                    result.fold(
+                        { data ->
+                            completion(response.statusCode == 200)
+                        },
+                        { error ->
+                            completion(false)
+                        }
+                    )
                 }
-        } else {
-            completion(false)
         }
     }
 
@@ -128,14 +170,16 @@ class MainActivity : AppCompatActivity() {
             isNetworkAvailable() -> {
                 snackbar.dismiss()
                 checkConnectionServer { isServerAvailable ->
-                    when {
-                        isServerAvailable -> {
-                            snackbar.dismiss()
-                            checkToken()
-                        }
-                        else -> {
-                            snackbar.show()
-                            conntimer.start()
+                    runOnUiThread {
+                        when {
+                            isServerAvailable -> {
+                                snackbar.dismiss()
+                                checkToken()
+                            }
+                            else -> {
+                                snackbar.show()
+                                conntimer.start()
+                            }
                         }
                     }
                 }
