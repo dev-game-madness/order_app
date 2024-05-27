@@ -13,9 +13,6 @@ import androidx.core.view.WindowInsetsCompat
 import com.github.kittinunf.fuel.Fuel
 import com.google.android.material.snackbar.Snackbar
 
-const val regURL = "http://192.168.1.104:5000/api/v1/users/reg"
-const val fullRegURL = "http://192.168.1.104:5000/api/v1/users/fullreg"
-
 class RegistrationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +28,7 @@ class RegistrationActivity : AppCompatActivity() {
         val linkToLog: TextView = findViewById(R.id.logLink)
         linkToLog.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             startActivity(intent)
         }
 
@@ -72,7 +70,7 @@ class RegistrationActivity : AppCompatActivity() {
             }
             """.trimIndent()
 
-        Fuel.post(regURL)
+        Fuel.post(ApiConstants.REGISTRATION_URL)
             .header("Content-Type" to "application/json")
             .timeoutRead(3000)
             .body(jsonBody)
@@ -80,8 +78,8 @@ class RegistrationActivity : AppCompatActivity() {
                 when (response.statusCode) {
                     201 -> {
                         val intent = Intent(this, LoginActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                         startActivity(intent)
-                        finish()
                     }
                     409 -> showError("Пользователь с такой почтой уже существует")
                     else -> {

@@ -17,13 +17,25 @@
         android:theme="@style/Theme.OrdersApp"
         tools:targetApi="31">
         <activity
-            android:name=".MyOrderActivity"
+            android:name=".MyArchiveOrdersActivity"
             android:exported="false" />
+        <activity
+            android:name=".OrdersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CreateOrderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MyOrderActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".MyProfileActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".RegistrationActivity"
             android:exported="false"

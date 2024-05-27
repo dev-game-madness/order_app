@@ -18,8 +18,6 @@ import com.google.android.material.snackbar.Snackbar
 import org.json.JSONException
 import org.json.JSONObject
 
-const val logURL = "http://192.168.1.104:5000/api/v1/users/log"
-
 class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +33,7 @@ class LoginActivity : AppCompatActivity() {
         val linkToReg: TextView = findViewById(R.id.regLink)
         linkToReg.setOnClickListener {
             val intent = Intent(this, RegistrationActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             startActivity(intent)
         }
 
@@ -68,7 +67,7 @@ class LoginActivity : AppCompatActivity() {
                 }
                 """.trimIndent()
 
-        Fuel.post(logURL)
+        Fuel.post(ApiConstants.LOGIN_URL)
             .header("Content-Type" to "application/json")
             .timeoutRead(3000)
             .body(jsonBody)
@@ -107,8 +106,8 @@ class LoginActivity : AppCompatActivity() {
                                     apply()
                                 }
                                 val intent = Intent(this, MainActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                                 startActivity(intent)
-                                finish()
                             }
 
                             else -> {

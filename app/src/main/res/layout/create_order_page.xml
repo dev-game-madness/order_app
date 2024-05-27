@@ -2,16 +2,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/myProfilePage"
+    android:id="@+id/createOrderPage"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MyProfileActivity">
+    tools:context=".CreateOrderActivity">
 
     <include
         layout="@layout/toolbar_layout" />
 
     <ScrollView
-        android:id="@+id/scrollViewProfile"
+        android:id="@+id/scrollViewNewOrder"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -30,131 +30,137 @@
             android:paddingBottom="16dp">
 
             <TextView
-                android:id="@+id/titleTextProfile"
+                android:id="@+id/titleTextLabelNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Данные профиля"
+                android:text="Создание заказа"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textLabelEmail"
+                android:id="@+id/textLabelNameNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Email" />
+                android:text="Название заказа" />
 
             <EditText
-                android:id="@+id/profileEmail"
+                android:id="@+id/nameNewOrder"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="8dp"
                 android:ems="10"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:hint="Введите Email"
-                android:inputType="textEmailAddress" />
-
-            <TextView
-                android:id="@+id/textLabelName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Имя/Название компании" />
-
-            <EditText
-                android:id="@+id/profileName"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                android:ems="10"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:hint="Введите Имя/Название компании"
+                android:hint="Введите название"
                 android:inputType="text" />
 
             <TextView
-                android:id="@+id/textLabelPhone"
+                android:id="@+id/textLabelMainCategoryNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Номер телефона" />
+                android:text="Основная категория" />
 
-            <EditText
-                android:id="@+id/profilePhone"
+            <Spinner
+                android:id="@+id/mainCategoryNewOrder"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="8dp"
                 android:ems="10"
+
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:hint="Введите номер телефона"
-                android:inputType="phone" />
-
-            <TextView
-                android:id="@+id/textLabelRegion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Область" />
-
-            <AutoCompleteTextView
-                android:id="@+id/profileRegion"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                android:ems="10"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:hint="Выберите область"
+                android:hint="Выберите основную категорию"
                 android:inputType="text" />
 
             <TextView
-                android:id="@+id/textLabelCity"
+                android:id="@+id/textLabelSubCategoryNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Город" />
+                android:text="Подкатегория" />
 
-            <AutoCompleteTextView
-                android:id="@+id/profileCity"
+            <Spinner
+                android:id="@+id/subCategoryNewOrder"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="8dp"
                 android:ems="10"
+
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:hint="Выберите город"
+                android:hint="Выберите подкатегорию"
                 android:inputType="text" />
 
             <TextView
-                android:id="@+id/textLabelSpecialization"
+                android:id="@+id/textLabelDateNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Специализация" />
+                android:text="Сроки выполнения заказа" />
 
             <EditText
-                android:id="@+id/profileSpecialization"
+                android:id="@+id/dateNewOrder"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="8dp"
                 android:ems="10"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:hint="Введите специализацию"
+                android:gravity="top"
+                android:hint="Введите срок выполнения"
+                android:inputType="number" />
+
+            <TextView
+                android:id="@+id/textLabelBudgetNewOrder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Бюджет" />
+
+            <EditText
+                android:id="@+id/budgetNewOrder"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:ems="10"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="top"
+                android:hint="Введите бюджет"
+                android:inputType="number" />
+
+            <TextView
+                android:id="@+id/textLabelNewOrder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Описание заказа" />
+
+            <EditText
+                android:id="@+id/newOrder"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="8dp"
+                android:ems="10"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="top"
+                android:hint="Введите описание"
                 android:inputType="text" />
 
             <Button
-                android:id="@+id/saveProfileButton"
+                android:id="@+id/createOrderButton"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginTop="16dp"
-                android:text="Сохранить" />
+                android:text="Разместить заказ" />
 
         </LinearLayout>
 
     </ScrollView>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

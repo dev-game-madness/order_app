@@ -8,7 +8,6 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -23,7 +22,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
 
-data class MyOrder(
+data class MyArchiveOrder(
     val id: Int,
     val order_name: String,
     val order: String,
@@ -36,32 +35,20 @@ data class MyOrder(
     val order_city: String
 )
 
-class MyOrderActivity : AppCompatActivity() {
+class MyArchiveOrdersActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.my_order_page)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myOrderPage)) { v, insets ->
+        setContentView(R.layout.my_archive_orders_page)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myArchiveOrderPage)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        MainToolbar.setupToolbar(this, R.id.appToolbar, "Мои заказы")
+        MainToolbar.setupToolbar(this, R.id.appToolbar, "Архив моих заказов")
 
-        val newOrderButton: Button = findViewById(R.id.newMyOrderButton)
-        newOrderButton.setOnClickListener {
-            val intent = Intent(this, CreateOrderActivity::class.java)
-            startActivity(intent)
-        }
-
-        val archiveOrderButton: Button = findViewById(R.id.myArchiveOrderButton)
-        archiveOrderButton.setOnClickListener {
-            val intent = Intent(this, MyArchiveOrdersActivity::class.java)
-            startActivity(intent)
-        }
-
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.myOrderPage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.myArchiveOrderPage))
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
                 loadOrdersData()
@@ -72,7 +59,7 @@ class MyOrderActivity : AppCompatActivity() {
     }
 
     private fun loadOrdersData() {
-        val ordersContainer: LinearLayout = findViewById(R.id.myOrdersContainer)
+        val ordersContainer: LinearLayout = findViewById(R.id.myArchiveOrdersContainer)
         val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         val sharedPrefs = EncryptedSharedPreferences.create(
             "auth",
@@ -85,7 +72,7 @@ class MyOrderActivity : AppCompatActivity() {
 
         if (token != null) {
 
-            Fuel.get(ApiConstants.MY_ORDERS_URL)
+            Fuel.get(ApiConstants.MY_ARCHIVE_ORDERS_URL)
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)
                 .responseString { _, response, result ->
@@ -96,12 +83,12 @@ class MyOrderActivity : AppCompatActivity() {
                                     404 ->{
                                         val errorMessage = "Нет созданных заказов"
                                         Log.w("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.myOrderPage), errorMessage, Snackbar.LENGTH_SHORT).show()
+                                        Snackbar.make(findViewById(R.id.myArchiveOrderPage), errorMessage, Snackbar.LENGTH_SHORT).show()
                                     }
                                     else -> {
                                         val errorMessage = "Ошибка получения данных о заказах"
                                         Log.e("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.myOrderPage), errorMessage, Snackbar.LENGTH_SHORT).show()
+                                        Snackbar.make(findViewById(R.id.myArchiveOrderPage), errorMessage, Snackbar.LENGTH_SHORT).show()
                                     }
                                 }
                             }
@@ -114,7 +101,7 @@ class MyOrderActivity : AppCompatActivity() {
 
                                         for (i in 0 until ordersArray.length()) {
                                             val orderObject = ordersArray.getJSONObject(i)
-                                            val order = MyOrder(
+                                            val order = MyArchiveOrder(
                                                 orderObject.getInt("id"),
                                                 orderObject.getString("order_name"),
                                                 orderObject.getString("order"),
@@ -150,7 +137,7 @@ class MyOrderActivity : AppCompatActivity() {
     }
 
 
-    private fun createOrderView(order: MyOrder): View {
+    private fun createOrderView(order: MyArchiveOrder): View {
         val orderLayout = CardView(this)
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -199,7 +186,7 @@ class MyOrderActivity : AppCompatActivity() {
     }
 
     private fun showError(emessageSuccess: String) {
-        Snackbar.make(findViewById(R.id.myOrderPage), emessageSuccess, Snackbar.LENGTH_SHORT).show()
+        Snackbar.make(findViewById(R.id.myArchiveOrderPage), emessageSuccess, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
