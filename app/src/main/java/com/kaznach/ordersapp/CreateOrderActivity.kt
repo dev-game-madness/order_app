@@ -13,6 +13,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
 import androidx.activity.enableEdgeToEdge
@@ -39,6 +40,13 @@ class CreateOrderActivity : AppCompatActivity() {
         }
 
         MainToolbar.setupToolbar(this, R.id.appToolbar, "Новый заказ")
+
+        val navbarClickListener = MainNavbar(this)
+        findViewById<LinearLayout>(R.id.nav_home).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_orders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_add).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
         val nameNewOrder: EditText = findViewById(R.id.nameNewOrder)
         val mainCategoryNewOrder: Spinner = findViewById(R.id.mainCategoryNewOrder)

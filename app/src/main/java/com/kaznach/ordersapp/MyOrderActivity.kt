@@ -29,8 +29,8 @@ data class MyOrder(
     val order: String,
     val category: String,
     val subcategory: String,
-    val order_deadline: String,
-    val order_budget: String,
+    val order_deadline: Int,
+    val order_budget: Int,
     val order_create: String,
     val order_region: String,
     val order_city: String
@@ -49,11 +49,12 @@ class MyOrderActivity : AppCompatActivity() {
 
         MainToolbar.setupToolbar(this, R.id.appToolbar, "Мои заказы")
 
-        val newOrderButton: Button = findViewById(R.id.newMyOrderButton)
-        newOrderButton.setOnClickListener {
-            val intent = Intent(this, CreateOrderActivity::class.java)
-            startActivity(intent)
-        }
+        val navbarClickListener = MainNavbar(this)
+        findViewById<LinearLayout>(R.id.nav_home).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_orders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_add).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
         val archiveOrderButton: Button = findViewById(R.id.myArchiveOrderButton)
         archiveOrderButton.setOnClickListener {
@@ -120,8 +121,8 @@ class MyOrderActivity : AppCompatActivity() {
                                                 orderObject.getString("order"),
                                                 orderObject.getString("category"),
                                                 orderObject.getString("subcategory"),
-                                                orderObject.getString("order_deadline"),
-                                                orderObject.getString("order_budget"),
+                                                orderObject.getInt("order_deadline"),
+                                                orderObject.getInt("order_budget"),
                                                 orderObject.getString("order_create"),
                                                 orderObject.getString("order_region"),
                                                 orderObject.getString("order_city")
@@ -193,6 +194,23 @@ class MyOrderActivity : AppCompatActivity() {
 
         val button = MaterialButton(this)
         button.text = "Подробнее"
+        button.setOnClickListener {
+            // Создаем Intent для перехода на OrderDetailsActivity
+            val intent = Intent(this, OrderDetailsActivity::class.java)
+            // Добавляем информацию о заказе в Intent
+            intent.putExtra("order_id", order.id)
+            intent.putExtra("order_name", order.order_name)
+            intent.putExtra("order_description", order.order)
+            intent.putExtra("category", order.category)
+            intent.putExtra("subcategory", order.subcategory)
+            intent.putExtra("order_deadline", order.order_deadline)
+            intent.putExtra("order_budget", order.order_budget)
+            intent.putExtra("order_create", order.order_create)
+            intent.putExtra("order_region", order.order_region)
+            intent.putExtra("order_city", order.order_city)
+
+            startActivity(intent)
+        }
         innerLayout.addView(button)
 
         return orderLayout

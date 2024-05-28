@@ -1,11 +1,7 @@
 package com.kaznach.ordersapp
 
-import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -16,10 +12,10 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -40,6 +36,13 @@ class MyProfileActivity : AppCompatActivity() {
         setContentView(R.layout.my_profile_page)
 
         MainToolbar.setupToolbar(this, R.id.appToolbar, "Мой профиль")
+
+        val navbarClickListener = MainNavbar(this)
+        findViewById<LinearLayout>(R.id.nav_home).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_orders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_add).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
+        findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myProfilePage)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
