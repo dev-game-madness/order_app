@@ -15,7 +15,6 @@ import androidx.security.crypto.MasterKeys
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.result.Result
 import com.google.android.material.snackbar.Snackbar
-import org.json.JSONException
 import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
@@ -67,7 +66,7 @@ class LoginActivity : AppCompatActivity() {
                 }
                 """.trimIndent()
 
-        Fuel.post(ApiConstants.LOGIN_URL)
+        Fuel.post(ApiConstants.URLS["users/log"].toString())
             .header("Content-Type" to "application/json")
             .timeoutRead(3000)
             .body(jsonBody)

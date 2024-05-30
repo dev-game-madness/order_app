@@ -88,6 +88,7 @@ class MyProfileActivity : AppCompatActivity() {
         }
 
         val scrollView = findViewById<ScrollView>(R.id.scrollViewProfile)
+        scrollView.visibility = View.GONE
 
         ViewCompat.setOnApplyWindowInsetsListener(scrollView) { _, insets ->
             val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -143,9 +144,10 @@ class MyProfileActivity : AppCompatActivity() {
             userFullReg(profileNameDB, profilePhoneDB, profileRegionDB, profileCityDB, profileSpecializationDB)
         }
 
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.myProfilePage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
+                scrollView.visibility = View.VISIBLE
                 loadProfileData()
             } else {
                 // Отображение ошибки
@@ -180,7 +182,7 @@ class MyProfileActivity : AppCompatActivity() {
         val token = sharedPrefs.getString("token", null)
 
         if (token != null) {
-            Fuel.get(ApiConstants.PROFILE_URL)
+            Fuel.get(ApiConstants.URLS["users/profile"].toString())
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)
                 .responseString { _, response, result ->
@@ -251,7 +253,7 @@ class MyProfileActivity : AppCompatActivity() {
         val token = sharedPrefs.getString("token", null)
 
         if (token != null) {
-            Fuel.put(ApiConstants.PROFILE_URL)
+            Fuel.put(ApiConstants.URLS["users/profile"].toString())
                 .header("Content-Type" to "application/json")
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)

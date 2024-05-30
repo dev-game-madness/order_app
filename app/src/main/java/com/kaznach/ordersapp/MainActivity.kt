@@ -31,12 +31,12 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.mainPage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
                 // Загрузка данных
             } else {
-                // Отображение ошибки
+                // Отображение ошибки (уже обрабатывается в ConnectAndTokenManager)
             }
         }
     }

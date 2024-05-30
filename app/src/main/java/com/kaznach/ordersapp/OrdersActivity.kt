@@ -55,7 +55,7 @@ class OrdersActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
         findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.ordersPage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
                 loadOrdersData()
@@ -79,7 +79,7 @@ class OrdersActivity : AppCompatActivity() {
 
         if (token != null) {
 
-            Fuel.get(ApiConstants.ORDERS_URL)
+            Fuel.get(ApiConstants.URLS["orders/all"].toString())
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)
                 .responseString { _, response, result ->

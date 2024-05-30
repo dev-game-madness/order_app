@@ -63,7 +63,7 @@ object MainToolbar {
         val token = sharedPrefs.getString("token", null)
 
         if (token != null) {
-            Fuel.put(ApiConstants.LOGOUT_URL)
+            Fuel.put(ApiConstants.URLS["users/logout"].toString())
                 .header("Authorization" to "Bearer $token")
                 .timeout(3000)
                 .response { _, _, _ -> }

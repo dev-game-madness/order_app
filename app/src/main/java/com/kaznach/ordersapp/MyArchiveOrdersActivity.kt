@@ -55,7 +55,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
         findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.myArchiveOrderPage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
                 loadOrdersData()
@@ -79,7 +79,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
 
         if (token != null) {
 
-            Fuel.get(ApiConstants.MY_ARCHIVE_ORDERS_URL)
+            Fuel.get(ApiConstants.URLS["orders/myarchiveorders"].toString())
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)
                 .responseString { _, response, result ->

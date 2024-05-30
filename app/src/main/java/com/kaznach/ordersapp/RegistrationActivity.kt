@@ -70,7 +70,7 @@ class RegistrationActivity : AppCompatActivity() {
             }
             """.trimIndent()
 
-        Fuel.post(ApiConstants.REGISTRATION_URL)
+        Fuel.post(ApiConstants.URLS["users/reg"].toString())
             .header("Content-Type" to "application/json")
             .timeoutRead(3000)
             .body(jsonBody)

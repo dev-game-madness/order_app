@@ -1,32 +1,42 @@
 package com.kaznach.ordersapp
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.github.kittinunf.fuel.Fuel
-import com.google.android.material.snackbar.Snackbar
 
-class ConnectAndTokenManager(private val context: Context, private val snackbarView: View) {
+class ConnectAndTokenManager<T : Activity>(private val context: Context, private val activity: T) {
 
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     fun checkConnectionAndToken(onSuccess: (Boolean) -> Unit) {
         if (isNetworkAvailable()) {
             checkServerAvailability(
-                onSuccess = { checkToken(onSuccess) },
+                onSuccess = {
+                    activity.runOnUiThread {  // Обновляем UI в главном потоке
+                        checkToken(onSuccess)
+                    }
+                },
                 onFailure = {
-                    showSnackbarError("Нет связи с сервером")
-                    onSuccess(false)
+                    activity.runOnUiThread {
+                        showServerError()
+                        onSuccess(false)
+                    }
                 }
             )
         } else {
-            showSnackbarError("Нет подключения к Интернету")
-            onSuccess(false)
+            activity.runOnUiThread {
+                showNoInternetError()
+                onSuccess(false)
+            }
         }
     }
 
@@ -37,7 +47,7 @@ class ConnectAndTokenManager(private val context: Context, private val snackbarV
     }
 
     private fun checkServerAvailability(onSuccess: () -> Unit, onFailure: () -> Unit) {
-        Fuel.head(ApiConstants.CHECK_CONNECTION_URL)
+        Fuel.head(ApiConstants.URLS["connection/check"].toString())
             .timeout(2000)
             .response { _, response, result ->
                 result.fold(
@@ -67,11 +77,10 @@ class ConnectAndTokenManager(private val context: Context, private val snackbarV
         val token = sharedPrefs.getString("token", null)
 
         if (token != null) {
-            Fuel.get(ApiConstants.CHECK_SESSION_URL)
+            Fuel.get(ApiConstants.URLS["sessions/check"].toString())
                 .header("Authorization" to "Bearer $token")
                 .response { _, response, result ->
                     if (response.statusCode == 200) {
-                        showSnackbarError("Сессия найдена")
                         onSuccess(true)
                     } else {
                         startLoginActivity()
@@ -86,13 +95,29 @@ class ConnectAndTokenManager(private val context: Context, private val snackbarV
         }
     }
 
-    private fun showSnackbarError(message: String) {
-        Snackbar.make(snackbarView, message, Snackbar.LENGTH_LONG).show()
-    }
-
     private fun startLoginActivity() {
         val intent = Intent(context, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
         context.startActivity(intent)
+    }
+
+    private fun showNoInternetError() {
+        val noConnectionLayout = activity.findViewById<View>(R.id.noConnectionLayout)
+        val imageView = noConnectionLayout.findViewById<ImageView>(R.id.imageViewNoConn)
+        val textView = noConnectionLayout.findViewById<TextView>(R.id.textViewNoConn)
+
+        noConnectionLayout.visibility = View.VISIBLE
+        imageView.setImageResource(R.drawable.iconnointernet)
+        textView.setText(R.string.no_internet_message)
+    }
+
+    private fun showServerError() {
+        val noConnectionLayout = activity.findViewById<View>(R.id.noConnectionLayout)
+        val imageView = noConnectionLayout.findViewById<ImageView>(R.id.imageViewNoConn)
+        val textView = noConnectionLayout.findViewById<TextView>(R.id.textViewNoConn)
+
+        noConnectionLayout.visibility = View.VISIBLE
+        imageView.setImageResource(R.drawable.iconnoconserver)
+        textView.setText(R.string.server_error_message)
     }
 }

@@ -62,12 +62,12 @@ class MyOrderActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        val connectionAndAuthManager = ConnectAndTokenManager(this, findViewById(R.id.myOrderPage))
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
                 loadOrdersData()
             } else {
-                // Отображение ошибки
+                // Отображение ошибки (уже обрабатывается в ConnectAndTokenManager)
             }
         }
     }
@@ -86,7 +86,7 @@ class MyOrderActivity : AppCompatActivity() {
 
         if (token != null) {
 
-            Fuel.get(ApiConstants.MY_ORDERS_URL)
+            Fuel.get(ApiConstants.URLS["orders/myorders"].toString())
                 .header("Authorization" to "Bearer $token")
                 .timeoutRead(3000)
                 .responseString { _, response, result ->

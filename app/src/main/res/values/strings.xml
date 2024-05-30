@@ -18,5 +18,8 @@
     <string name="hello_login">Войдите в аккаунт СтройЗаказ</string>
     <string name="hello_reg">Создайте аккаунт СтройЗаказ</string>
 
+    <string name="no_internet_message">Нет подключения к Интернету</string>
+    <string name="server_error_message">Нет связи с сервером</string>
+
 
 </resources>

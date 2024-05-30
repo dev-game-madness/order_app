@@ -48,6 +48,18 @@ class CreateOrderActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
         findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
+        val scrollView = findViewById<ScrollView>(R.id.scrollViewNewOrder)
+        scrollView.visibility = View.GONE
+
+        val connectionAndAuthManager = ConnectAndTokenManager(this, this)
+        connectionAndAuthManager.checkConnectionAndToken { success ->
+            if (success) {
+                scrollView.visibility = View.VISIBLE
+            } else {
+                // Отображение ошибки
+            }
+        }
+
         val nameNewOrder: EditText = findViewById(R.id.nameNewOrder)
         val mainCategoryNewOrder: Spinner = findViewById(R.id.mainCategoryNewOrder)
         val subCategoryNewOrder: Spinner = findViewById(R.id.subCategoryNewOrder)
@@ -86,8 +98,6 @@ class CreateOrderActivity : AppCompatActivity() {
                 // Ничего не выбрано
             }
         }
-
-        val scrollView = findViewById<ScrollView>(R.id.scrollViewNewOrder)
 
         ViewCompat.setOnApplyWindowInsetsListener(scrollView) { _, insets ->
             val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -161,7 +171,7 @@ class CreateOrderActivity : AppCompatActivity() {
                 }
                 """.trimIndent()
 
-        Fuel.post(ApiConstants.CREATE_ORDER_URL)
+        Fuel.post(ApiConstants.URLS["orders/create"].toString())
             .header("Authorization", "Bearer $token")
             .header("Content-Type" to "application/json")
             .timeoutRead(3000)
