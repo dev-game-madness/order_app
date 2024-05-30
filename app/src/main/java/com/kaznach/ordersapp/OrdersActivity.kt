@@ -157,6 +157,7 @@ class OrdersActivity : AppCompatActivity() {
         button.setOnClickListener {
             // Создаем Intent для перехода на OrderDetailsActivity
             val intent = Intent(this, OrderDetailsActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
             // Добавляем информацию о заказе в Intent
             intent.putExtra("order_id", order.id)
             intent.putExtra("order_name", order.order_name)

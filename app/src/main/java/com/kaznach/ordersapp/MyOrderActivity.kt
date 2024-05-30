@@ -78,7 +78,6 @@ class MyOrderActivity : AppCompatActivity() {
             endpoint = "orders/myorders",
             method = Method.GET,
             onSuccess = { data ->
-                // Используем runOnUiThread для обновления UI из главного потока
                 runOnUiThread {
                     val jsonObject = JSONObject(data)
                     val ordersArray = jsonObject.getJSONArray("orders")
@@ -104,18 +103,15 @@ class MyOrderActivity : AppCompatActivity() {
                 }
             },
             onFailure = { errorMessage, statusCode ->
-                // Обновляем UI с ошибкой из главного потока
                 runOnUiThread {
                     when (statusCode) {
                         404 -> {
                             val message = "Нет созданных заказов"
-                            Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
+
                             SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
                         }
-
                         else -> {
                             val message = "Ошибка получения данных о заказах. Код: $statusCode"
-                            Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
                             SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
                         }
                     }
@@ -123,8 +119,6 @@ class MyOrderActivity : AppCompatActivity() {
                 }
             }
         )
-
-        // Выполнение запроса
         getRequest.execute()
     }
 
@@ -175,6 +169,7 @@ class MyOrderActivity : AppCompatActivity() {
         button.setOnClickListener {
             // Создаем Intent для перехода на OrderDetailsActivity
             val intent = Intent(this, OrderDetailsActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
             // Добавляем информацию о заказе в Intent
             intent.putExtra("order_id", order.id)
             intent.putExtra("order_name", order.order_name)

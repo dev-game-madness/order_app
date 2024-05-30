@@ -209,10 +209,10 @@ class MyProfileActivity : AppCompatActivity() {
             }
             """.trimIndent()
 
-        val postRequest = ApiRequestConstructor(
+        val putRequest = ApiRequestConstructor(
             context = this,
             endpoint = "users/profile",
-            method = Method.POST,
+            method = Method.PUT,
             body = body,
             onSuccess = { data ->
                 runOnUiThread {
@@ -220,18 +220,18 @@ class MyProfileActivity : AppCompatActivity() {
                     SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "SUCCESS")
                 }
                 // Обработка успешного ответа
-                Log.d("API", "Успешный POST запрос: $data")
+                Log.d("API", "Успешный PUT запрос: $data")
             },
             onFailure = { errorMessage, statusCode ->
                 runOnUiThread {
                     val message = "Ошибка обновления профиля. Код:"
                     SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
                 }
-                    Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
+                    Log.e("API", "Ошибка PUT запроса: $errorMessage, код: $statusCode")
                 }
         )
 
-        postRequest.execute()
+        putRequest.execute()
     }
 
     private fun enableElements() {

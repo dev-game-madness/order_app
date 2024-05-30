@@ -1,6 +1,5 @@
 package com.kaznach.ordersapp
 
-import ApiRequestConstructor
 import SnackbarHelper
 import android.content.Intent
 import android.os.Bundle
@@ -14,11 +13,13 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.github.kittinunf.fuel.core.Method
+import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.result.Result
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -60,53 +61,61 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun userLogin(email: String, password: String) {
+        val jsonBody = """
+        {
+        "email": "${email}",
+        "password": "${password}"
+        }""".trimIndent()
 
-        val body = """
-                {
-                  "email": "${email}",
-                  "password": "${password}"
-                }
-                """.trimIndent()
-
-        val postRequest = ApiRequestConstructor(
-            context = this,
-            endpoint = "users/log",
-            method = Method.POST,
-            body = body,
-            onSuccess = { data ->
-                runOnUiThread {
-                    val jsonObject = JSONObject(data)
-                    val receivedToken = jsonObject.getString("token")
-                    val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-                    val sharedPrefs = EncryptedSharedPreferences.create(
-                        "auth",
-                        masterKeyAlias,
-                        applicationContext,
-                        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                    )
-                    with(sharedPrefs.edit()) {
-                        putString("token", receivedToken)
-                        apply()
+        Fuel.post(ApiConstants.URLS["users/log"].toString())
+            .header("Content-Type" to "application/json")
+            .timeoutRead(3000)
+            .body(jsonBody)
+            .responseString { _, response, result ->
+                when (result) {
+                    is Result.Failure -> {
+                        when (response.statusCode) {
+                            401 -> runOnUiThread { SnackbarHelper.showSnackbar(this, "Неверный логин или пароль", Snackbar.LENGTH_LONG, "ERROR") }
+                            409 -> runOnUiThread{ SnackbarHelper.showSnackbar(this, "Пользователя с такой почтой не существует", Snackbar.LENGTH_LONG, "ERROR") }
+                            else -> {
+                                val ex = result.getException()
+                                val errorData = ex.response.data
+                                val errorMessage = String(errorData, Charsets.UTF_8)
+                                Log.e("Fuel", "Ошибка входа: $errorMessage")
+                                runOnUiThread {
+                                    SnackbarHelper.showSnackbar(this, "Ошибка входа. Код: ${response.statusCode}", Snackbar.LENGTH_LONG, "ERROR")
+                                }
+                            }
+                        }
                     }
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    startActivity(intent)
-                }
-                Log.d("API", "Успешный POST запрос: $data")
-            },
-            onFailure = { errorMessage, statusCode ->
-                runOnUiThread {
-                    val message = when (statusCode) {
-                        401 -> "Неверный логин или пароль"
-                        409 -> "Пользователя с такой почтой не существует"
-                        else -> "Ошибка входа: Код $statusCode"
+                    is Result.Success -> {
+                        when (response.statusCode) {
+                            200 -> {
+                                val data = result.get()
+                                val jsonObject = JSONObject(data)
+                                val receivedToken = jsonObject.getString("token")
+                                val masterKeyAlias =
+                                    MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+                                val sharedPrefs = EncryptedSharedPreferences.create(
+                                    "auth",
+                                    masterKeyAlias,
+                                    applicationContext,
+                                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                                )
+                                with(sharedPrefs.edit()) {
+                                    putString("token", receivedToken)
+                                    apply()
+                                }
+                                runOnUiThread {
+                                    val intent = Intent(this, MainActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    startActivity(intent)
+                                }
+                            }
+                        }
                     }
-                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
                 }
-                Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
             }
-        )
-        postRequest.execute()
     }
 }
