@@ -1,6 +1,7 @@
 package com.kaznach.ordersapp
 
-import android.content.Intent
+import ApiRequestConstructor
+import SnackbarHelper
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -18,10 +19,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.result.Result
+import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
 
@@ -157,10 +155,6 @@ class MyProfileActivity : AppCompatActivity() {
         disableElements()
     }
 
-    private fun showError(message: String) {
-        Snackbar.make(findViewById(R.id.myProfilePage), message, Snackbar.LENGTH_SHORT).show()
-    }
-
     private fun loadProfileData() {
 
         val profileEmail: EditText = findViewById(R.id.profileEmail)
@@ -171,138 +165,73 @@ class MyProfileActivity : AppCompatActivity() {
         val profileCity: AutoCompleteTextView = findViewById(R.id.profileCity)
         val profileSpecialization: EditText = findViewById(R.id.profileSpecialization)
 
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            applicationContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
 
-        if (token != null) {
-            Fuel.get(ApiConstants.URLS["users/profile"].toString())
-                .header("Authorization" to "Bearer $token")
-                .timeoutRead(3000)
-                .responseString { _, response, result ->
-                    runOnUiThread {
-                        when (result) {
-                            is Result.Failure -> {
-                                val ex = result.getException()
-                                val errorData = ex.response.data
-                                val errorMessage = String(errorData, Charsets.UTF_8)
-                                Log.e("Fuel", "Ошибка получения данных профиля: $errorMessage")
-                                showError(errorMessage)
-                            }
-                            is Result.Success -> {
-                                when (response.statusCode) {
-                                    200 -> {
-                                        // Успешное получение данных
-                                        val data = result.get()
-                                        val jsonObject = JSONObject(data)
-                                        profileEmail.setText(jsonObject.optString("email", ""))
-                                        profileName.setText(jsonObject.optString("company_name", ""))
-                                        profilePhone.setText(jsonObject.optString("phone_num", ""))
-                                        profileRegion.setText(jsonObject.optString("region", ""))
-                                        profileCity.setText(jsonObject.optString("city", ""))
-                                        profileSpecialization.setText(jsonObject.optString("category", ""))
-                                        enableElements()
-                                        profileEmail.isEnabled = false
-                                    }
-                                    else -> {
-                                        val data = result.get()
-                                        val errorMessage =
-                                            "Ошибка: $data. Код ответа: ${response.statusCode}"
-                                        Log.w("Fuel", errorMessage)
-                                        showError(errorMessage)
-                                    }
-                                }
-                            }
-                        }
-                    }
+        val getRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "users/profile",
+            method = Method.GET,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val jsonObject = JSONObject(data)
+                    profileEmail.setText(jsonObject.optString("email", ""))
+                    profileName.setText(jsonObject.optString("company_name", ""))
+                    profilePhone.setText(jsonObject.optString("phone_num", ""))
+                    profileRegion.setText(jsonObject.optString("region", ""))
+                    profileCity.setText(jsonObject.optString("city", ""))
+                    profileSpecialization.setText(jsonObject.optString("category", ""))
+                    enableElements()
+                    profileEmail.isEnabled = false
                 }
-        } else {
-            runOnUiThread {
-                showError("Ошибка авторизации. Пожалуйста, войдите снова.")
-                val intent = Intent(this, LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+                Log.d("API", "Успешный GET запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = "Ошибка получения данных профиля. Код: $statusCode"
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
             }
-        }
+        )
+
+        // Выполнение запроса
+        getRequest.execute()
     }
 
     private fun userFullReg(profileNameDB: String, profilePhoneDB: String, profileRegionDB: String, profileCityDB: String, profileSpecializationDB: String) {
-        val jsonBody = """
-                {
-                  "profileNameDB": "${profileNameDB}",
-                  "profilePhoneDB": "${profilePhoneDB}",
-                  "profileRegionDB": "${profileRegionDB}",
-                  "profileCityDB": "${profileCityDB}",
-                  "profileSpecializationDB": "${profileSpecializationDB}"
-                }
-                """.trimIndent()
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            applicationContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
 
-        if (token != null) {
-            Fuel.put(ApiConstants.URLS["users/profile"].toString())
-                .header("Content-Type" to "application/json")
-                .header("Authorization" to "Bearer $token")
-                .timeoutRead(3000)
-                .body(jsonBody)
-                .responseString { _, response, result ->
-                    runOnUiThread { // Добавляем runOnUiThread
-                        when (result) {
-                            is Result.Failure -> {
-                                // Обработка ошибок
-                                val ex = result.getException()
-                                val errorData = ex.response.data
-                                val errorMessage = String(errorData, Charsets.UTF_8)
-                                Log.e("Fuel", "Ошибка регистрации: $errorMessage")
-                                showError(errorMessage)
-                            }
-
-                            is Result.Success -> {
-                                when (response.statusCode) {
-                                    200 -> {
-                                        // Успешная регистрация
-                                        showSuccess("Данные успешно обновлены!")
-                                    }
-
-                                    else -> {
-                                        // Обработка других кодов ответа
-                                        val data = result.get()
-                                        val errorMessage =
-                                            "Ошибка: $data. Код ответа: ${response.statusCode}"
-                                        Log.w("Fuel", errorMessage)
-                                        showError(errorMessage)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-        } else {
-            runOnUiThread {
-                // Обработка случая, когда токен отсутствует
-                showError("Ошибка авторизации. Пожалуйста, войдите снова.")
-                val intent = Intent(this, LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+        val body = """
+            {
+              "profileNameDB": "${profileNameDB}",
+              "profilePhoneDB": "${profilePhoneDB}",
+              "profileRegionDB": "${profileRegionDB}",
+              "profileCityDB": "${profileCityDB}",
+              "profileSpecializationDB": "${profileSpecializationDB}"
             }
-        }
-    }
+            """.trimIndent()
 
-    private fun showSuccess(emessageSuccess: String) {
-        Snackbar.make(findViewById(R.id.myProfilePage), emessageSuccess, Snackbar.LENGTH_SHORT).show()
+        val postRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "users/profile",
+            method = Method.POST,
+            body = body,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val message = "Данные успешно обновлены!"
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "SUCCESS")
+                }
+                // Обработка успешного ответа
+                Log.d("API", "Успешный POST запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = "Ошибка обновления профиля. Код:"
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                    Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
+                }
+        )
+
+        postRequest.execute()
     }
 
     private fun enableElements() {

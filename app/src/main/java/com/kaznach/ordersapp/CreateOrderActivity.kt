@@ -1,5 +1,7 @@
 package com.kaznach.ordersapp
 
+import ApiRequestConstructor
+import SnackbarHelper
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -20,10 +22,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.result.Result
+import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.snackbar.Snackbar
 
 class CreateOrderActivity : AppCompatActivity() {
@@ -150,17 +149,7 @@ class CreateOrderActivity : AppCompatActivity() {
 
     private fun createOrder(name: String, mainCategory: String, subCategory: String, date: String, budget: String, description: String) {
 
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            applicationContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
-
-        val jsonBody = """
+        val body = """
                 {
                   "name": "${name}",
                   "mainCategory": "${mainCategory}",
@@ -171,51 +160,37 @@ class CreateOrderActivity : AppCompatActivity() {
                 }
                 """.trimIndent()
 
-        Fuel.post(ApiConstants.URLS["orders/create"].toString())
-            .header("Authorization", "Bearer $token")
-            .header("Content-Type" to "application/json")
-            .timeoutRead(3000)
-            .body(jsonBody)
-            .responseString { _, response, result ->
-                when (result) {
-                    is Result.Failure -> {
-                        val ex = result.getException()
-                        val errorData = ex.response.data
-                        val errorMessage = String(errorData, Charsets.UTF_8)
-                        Log.e("Fuel", "Ошибка создания заказа. Код: ${response.statusCode}")
-                        showError(errorMessage)
+        val postRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "orders/create",
+            method = Method.POST,
+            body = body,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val dialog = Dialog(this)
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    dialog.setContentView(R.layout.create_oreder_dialog)
+                    dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                    dialog.setCanceledOnTouchOutside(false)
+                    dialog.setCancelable(false)
+                    val okButton = dialog.findViewById<Button>(R.id.dialog_ok_button)
+                    okButton.setOnClickListener {
+                        dialog.dismiss()
+                        finish()
                     }
-                    is Result.Success -> {
-                        when (response.statusCode) {
-                            201 -> {
-                                runOnUiThread {
-                                    val dialog = Dialog(this)
-                                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-                                    dialog.setContentView(R.layout.create_oreder_dialog)
-                                    dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                                    dialog.setCanceledOnTouchOutside(false)
-                                    dialog.setCancelable(false)
-                                    val okButton = dialog.findViewById<Button>(R.id.dialog_ok_button)
-                                    okButton.setOnClickListener {
-                                        dialog.dismiss()
-                                        finish()
-                                    }
-                                    dialog.show()
-                                }
-                            }
-                            else -> {
-                                val errorMessage = "Ошибка создания заказа. Код: ${response.statusCode}"
-                                Log.w("Fuel", errorMessage)
-                                showError(errorMessage)
-                            }
-                        }
-                    }
+                    dialog.show()
                 }
+                Log.d("API", "Успешный POST запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = "Ошибка создания заказа. Код: $statusCode"
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
             }
-
-    }
-    private fun showError(message: String) {
-        Snackbar.make(findViewById(R.id.createOrderPage), message, Snackbar.LENGTH_SHORT).show()
+        )
+        postRequest.execute()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

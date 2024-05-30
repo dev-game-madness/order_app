@@ -1,5 +1,7 @@
 package com.kaznach.ordersapp
 
+import ApiRequestConstructor
+import SnackbarHelper
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -12,8 +14,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.result.Result
+import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
 
@@ -59,69 +60,53 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun userLogin(email: String, password: String) {
-        val jsonBody = """
+
+        val body = """
                 {
                   "email": "${email}",
                   "password": "${password}"
                 }
                 """.trimIndent()
 
-        Fuel.post(ApiConstants.URLS["users/log"].toString())
-            .header("Content-Type" to "application/json")
-            .timeoutRead(3000)
-            .body(jsonBody)
-            .responseString { _, response, result ->
-                when (result) {
-                    is Result.Failure -> {
-                        when (response.statusCode) {
-                            401 -> showError("Неверный логин или пароль")
-                            409 -> showError("Пользователя с такой почтой не существует")
-                            else -> {
-                                val ex = result.getException()
-                                val errorData = ex.response.data
-                                val errorMessage = String(errorData, Charsets.UTF_8) // Получаем сообщение об ошибке из ответа
-                                Log.e("Fuel", "Ошибка входа: $errorMessage")
-                                showError(errorMessage)
-                            }
-                        }
-
+        val postRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "users/log",
+            method = Method.POST,
+            body = body,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val jsonObject = JSONObject(data)
+                    val receivedToken = jsonObject.getString("token")
+                    val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+                    val sharedPrefs = EncryptedSharedPreferences.create(
+                        "auth",
+                        masterKeyAlias,
+                        applicationContext,
+                        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                    )
+                    with(sharedPrefs.edit()) {
+                        putString("token", receivedToken)
+                        apply()
                     }
-                    is Result.Success -> {
-                        when (response.statusCode) {
-                            200 -> {
-                                val data = result.get()
-                                val jsonObject = JSONObject(data)
-                                val receivedToken = jsonObject.getString("token")
-                                val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-                                val sharedPrefs = EncryptedSharedPreferences.create(
-                                    "auth",
-                                    masterKeyAlias,
-                                    applicationContext,
-                                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                                )
-                                with(sharedPrefs.edit()) {
-                                    putString("token", receivedToken)
-                                    apply()
-                                }
-                                val intent = Intent(this, MainActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                startActivity(intent)
-                            }
-
-                            else -> {
-                                val data = result.get()
-                                val errorMessage = "Ошибка: $data. Код ответа: ${response.statusCode}"
-                                Log.w("Fuel", errorMessage)
-                                showError(errorMessage)
-                            }
-                        }
-                    }
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    startActivity(intent)
                 }
+                Log.d("API", "Успешный POST запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = when (statusCode) {
+                        401 -> "Неверный логин или пароль"
+                        409 -> "Пользователя с такой почтой не существует"
+                        else -> "Ошибка входа: Код $statusCode"
+                    }
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
             }
-
-    }
-    private fun showError(message: String) {
-        Snackbar.make(findViewById(R.id.loginPage), message, Snackbar.LENGTH_LONG).show()
+        )
+        postRequest.execute()
     }
 }

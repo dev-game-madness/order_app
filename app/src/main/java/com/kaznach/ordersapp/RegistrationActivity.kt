@@ -1,5 +1,7 @@
 package com.kaznach.ordersapp
 
+import ApiRequestConstructor
+import SnackbarHelper
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -10,7 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.snackbar.Snackbar
 
 class RegistrationActivity : AppCompatActivity() {
@@ -63,35 +65,37 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun userRegistration(email: String, password: String) {
-        val jsonBody = """
+
+        val body = """
             {
               "email": "${email}",
               "password": "${password}"
             }
             """.trimIndent()
 
-        Fuel.post(ApiConstants.URLS["users/reg"].toString())
-            .header("Content-Type" to "application/json")
-            .timeoutRead(3000)
-            .body(jsonBody)
-            .responseString { _, response, result ->
-                when (response.statusCode) {
-                    201 -> {
-                        val intent = Intent(this, LoginActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        startActivity(intent)
-                    }
-                    409 -> showError("Пользователь с такой почтой уже существует")
-                    else -> {
-                        val data = result.get()
-                        val errorMessage = "Непредвиденная ошибка ${data}. Код ответа: ${response.statusCode}"
-                        Log.w("Fuel", errorMessage)
-                        showError(errorMessage)
-                    }
+        val postRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "users/reg",
+            method = Method.POST,
+            body = body,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val intent = Intent(this, LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
                 }
-            }
-    }
-    private fun showError(message: String) {
-        Snackbar.make(findViewById(R.id.registrationPage), message, Snackbar.LENGTH_LONG).show()
+                Log.d("API", "Успешный POST запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = when (statusCode) {
+                        409 -> "Пользователь с такой почтой уже существует"
+                        else -> "Ошибка регистрации: Код $statusCode"
+                    }
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                Log.e("API", "Ошибка POST запроса: $errorMessage, код: $statusCode")
+            })
+        postRequest.execute()
     }
 }

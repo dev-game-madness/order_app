@@ -1,5 +1,6 @@
 package com.kaznach.ordersapp
 
+import ApiRequestConstructor
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -9,9 +10,8 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.Method
 
 class ConnectAndTokenManager<T : Activity>(private val context: Context, private val activity: T) {
 
@@ -66,38 +66,31 @@ class ConnectAndTokenManager<T : Activity>(private val context: Context, private
     }
 
     private fun checkToken(onSuccess: (Boolean) -> Unit) {
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            context,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
 
-        if (token != null) {
-            Fuel.get(ApiConstants.URLS["sessions/check"].toString())
-                .header("Authorization" to "Bearer $token")
-                .response { _, response, result ->
-                    if (response.statusCode == 200) {
-                        onSuccess(true)
-                    } else {
-                        startLoginActivity()
-                        val data = result.get()
-                        Log.e("Fuel", "$data")
-                        onSuccess(false)
-                    }
+        val getRequest = ApiRequestConstructor(
+            context = activity,
+            endpoint = "sessions/check",
+            method = Method.GET,
+            onSuccess = { data ->
+                activity.runOnUiThread {
+                    onSuccess(true)
                 }
-        } else {
-            startLoginActivity()
-            onSuccess(false)
-        }
+                Log.d("API", "Успешный GET запрос: $data")
+            },
+            onFailure = { errorMessage, statusCode ->
+                activity.runOnUiThread {
+                    startLoginActivity()
+                    onSuccess(false)
+                }
+                Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
+            }
+        )
+        getRequest.execute()
     }
 
     private fun startLoginActivity() {
         val intent = Intent(context, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         context.startActivity(intent)
     }
 

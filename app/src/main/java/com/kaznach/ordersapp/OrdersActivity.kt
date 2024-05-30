@@ -1,5 +1,7 @@
 package com.kaznach.ordersapp
 
+import ApiRequestConstructor
+import SnackbarHelper
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
@@ -14,10 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.result.Result
+import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
@@ -67,85 +66,47 @@ class OrdersActivity : AppCompatActivity() {
 
     private fun loadOrdersData() {
         val ordersContainer: LinearLayout = findViewById(R.id.ordersContainer)
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            applicationContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
+        val getRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "orders/all",
+            method = Method.GET,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val jsonObject = JSONObject(data)
+                    val ordersArray = jsonObject.getJSONArray("orders")
 
-        if (token != null) {
-
-            Fuel.get(ApiConstants.URLS["orders/all"].toString())
-                .header("Authorization" to "Bearer $token")
-                .timeoutRead(3000)
-                .responseString { _, response, result ->
-                    runOnUiThread {
-                        when (result) {
-                            is Result.Failure -> {
-                                when (response.statusCode) {
-                                    404 ->{
-                                        val errorMessage = "Нет созданных заказов"
-                                        Log.w("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.ordersPage), errorMessage, Snackbar.LENGTH_SHORT).show()
-                                    }
-                                    else -> {
-                                        val errorMessage = "Ошибка получения данных о заказах"
-                                        Log.e("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.ordersPage), errorMessage, Snackbar.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                            is Result.Success -> {
-                                when (response.statusCode) {
-                                    200 -> {
-                                        val data = result.get()
-                                        val jsonObject = JSONObject(data)
-                                        val ordersArray = jsonObject.getJSONArray("orders")
-
-                                        for (i in 0 until ordersArray.length()) {
-                                            val orderObject = ordersArray.getJSONObject(i)
-                                            val order = Order(
-                                                orderObject.getInt("id"),
-                                                orderObject.getString("order_name"),
-                                                orderObject.getString("order"),
-                                                orderObject.getString("category"),
-                                                orderObject.getString("subcategory"),
-                                                orderObject.getInt("order_deadline"),
-                                                orderObject.getInt("order_budget"),
-                                                orderObject.getString("order_create"),
-                                                orderObject.getString("order_region"),
-                                                orderObject.getString("order_city")
-                                            )
-                                            val orderView = createOrderView(order)
-                                            ordersContainer.addView(orderView)
-                                        }
-                                    }
-                                    404 ->{
-                                        val errorMessage = "Нет созданных заказов"
-                                        Log.w("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.ordersPage), errorMessage, Snackbar.LENGTH_SHORT).show()
-                                    }
-                                    else -> {
-                                        val data = result.get()
-                                        val errorMessage =
-                                            "Ошибка: $data. Код ответа: ${response.statusCode}"
-                                        Log.w("Fuel", errorMessage)
-                                        Snackbar.make(findViewById(R.id.ordersPage), errorMessage, Snackbar.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        }
+                    for (i in 0 until ordersArray.length()) {
+                        val orderObject = ordersArray.getJSONObject(i)
+                        val order = Order(
+                            orderObject.getInt("id"),
+                            orderObject.getString("order_name"),
+                            orderObject.getString("order"),
+                            orderObject.getString("category"),
+                            orderObject.getString("subcategory"),
+                            orderObject.getInt("order_deadline"),
+                            orderObject.getInt("order_budget"),
+                            orderObject.getString("order_create"),
+                            orderObject.getString("order_region"),
+                            orderObject.getString("order_city")
+                        )
+                        val orderView = createOrderView(order)
+                        ordersContainer.addView(orderView)
                     }
+                    Log.d("API", "Успешный GET запрос: $data")
                 }
-        } else {
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-        }
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = when (statusCode) {
+                        404 -> "Нет созданных заказов"
+                        else -> "Ошибка получения данных о заказах: Код $statusCode"
+                    }
+                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                }
+                Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
+            }
+        )
+        getRequest.execute()
     }
 
 
