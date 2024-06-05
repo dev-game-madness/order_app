@@ -3,6 +3,7 @@ package com.kaznach.ordersapp
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.TypedValue
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -22,8 +23,7 @@ class OrderDetailsActivity : AppCompatActivity() {
         val orderDeadline = intent.getIntExtra("order_deadline", 0)
         val orderBudget = intent.getIntExtra("order_budget", 0)
         val orderCreate = intent.getStringExtra("order_create") ?: ""
-        val orderRegion = intent.getStringExtra("order_region") ?: ""
-        val orderCity = intent.getStringExtra("order_city") ?: ""
+        val orderAddress = intent.getStringExtra("order_address") ?: ""
 
         MainToolbar.setupToolbar(this, R.id.appToolbar, "Заказ №${orderId}")
 
@@ -34,7 +34,7 @@ class OrderDetailsActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
         findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
-        displayOrderDetails(orderId,
+        displayOrderDetails(
             orderName,
             orderDescription,
             orderCategory,
@@ -42,12 +42,11 @@ class OrderDetailsActivity : AppCompatActivity() {
             orderDeadline,
             orderBudget,
             orderCreate,
-            orderRegion,
-            orderCity, ordersContainer)
+            orderAddress,
+            ordersContainer)
     }
 
     private fun displayOrderDetails(
-        orderId: Int,
         orderName: String,
         orderDescription: String,
         orderCategory: String,
@@ -55,8 +54,7 @@ class OrderDetailsActivity : AppCompatActivity() {
         orderDeadline: Int,
         orderBudget: Int,
         orderCreate: String,
-        orderRegion: String,
-        orderCity: String,
+        orderAddress: String,
         ordersContainer: LinearLayout
     ) {
         val innerLayout = LinearLayout(this)
@@ -68,8 +66,8 @@ class OrderDetailsActivity : AppCompatActivity() {
         ordersContainer.addView(innerLayout)
 
         createTextView(orderName, innerLayout, true, 22f)
-        createTextView(orderCreate, innerLayout, true)
-        createTextView("$orderRegion, $orderCity", innerLayout)
+        createTextViewWithIcon(R.drawable.iconcreateorderdate, "${orderCreate} МСК", innerLayout, true)
+        createTextViewWithIcon(R.drawable.iconlocation, orderAddress, innerLayout)
         createTextView("\nДанные заказа", innerLayout, true, 18f)
         createTextView("\nКатегория: $orderCategory, $orderSubcategory", innerLayout)
         createTextView("\nБюджет: $orderBudget рублей\nСрок выполения: $orderDeadline дней", innerLayout)
@@ -85,5 +83,35 @@ class OrderDetailsActivity : AppCompatActivity() {
             textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
         }
         parentLayout.addView(textView)
+    }
+
+    private fun createTextViewWithIcon(iconResId: Int, text: String, parentLayout: LinearLayout, bold: Boolean = false, size: Float = 16f) {
+        val linearLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        parentLayout.addView(linearLayout)
+
+        val imageView = ImageView(this).apply {
+            setImageResource(iconResId)
+            layoutParams = LinearLayout.LayoutParams(
+                48,
+                48
+            ).apply {
+                marginEnd = 8
+            }
+        }
+        linearLayout.addView(imageView)
+
+        val textView = TextView(this)
+        textView.text = text
+        if (bold) {
+            textView.setTypeface(null, Typeface.BOLD)
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
+        }
+        linearLayout.addView(textView) // Затем добавляем TextView
     }
 }

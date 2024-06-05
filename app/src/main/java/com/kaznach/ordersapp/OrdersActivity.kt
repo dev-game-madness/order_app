@@ -30,8 +30,7 @@ data class Order(
     val order_deadline: Int,
     val order_budget: Int,
     val order_create: String,
-    val order_region: String,
-    val order_city: String
+    val order_address: String
 )
 
 class OrdersActivity : AppCompatActivity() {
@@ -86,8 +85,7 @@ class OrdersActivity : AppCompatActivity() {
                             orderObject.getInt("order_deadline"),
                             orderObject.getInt("order_budget"),
                             orderObject.getString("order_create"),
-                            orderObject.getString("order_region"),
-                            orderObject.getString("order_city")
+                            orderObject.getString("order_address"),
                         )
                         val orderView = createOrderView(order)
                         ordersContainer.addView(orderView)
@@ -98,10 +96,10 @@ class OrdersActivity : AppCompatActivity() {
             onFailure = { errorMessage, statusCode ->
                 runOnUiThread {
                     val message = when (statusCode) {
-                        404 -> "Нет созданных заказов"
+                        404 -> "Нет ни одного заказа"
                         else -> "Ошибка получения данных о заказах: Код $statusCode"
                     }
-                    SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
+                    ordersContainer.addView(emptyOrders(message))
                 }
                 Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
             }
@@ -136,7 +134,7 @@ class OrdersActivity : AppCompatActivity() {
         innerLayout.addView(idTextView)
 
         val regionTextView = TextView(this)
-        regionTextView.text = "${order.order_region}, ${order.order_city}"
+        regionTextView.text = "${order.order_address}"
         innerLayout.addView(regionTextView)
 
         val categoryTextView = TextView(this)
@@ -167,14 +165,29 @@ class OrdersActivity : AppCompatActivity() {
             intent.putExtra("order_deadline", order.order_deadline)
             intent.putExtra("order_budget", order.order_budget)
             intent.putExtra("order_create", order.order_create)
-            intent.putExtra("order_region", order.order_region)
-            intent.putExtra("order_city", order.order_city)
+            intent.putExtra("order_region", order.order_address)
 
             startActivity(intent)
         }
         innerLayout.addView(button)
 
         return orderLayout
+    }
+
+    private fun emptyOrders(message: String): View {
+        val textView = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+                setMargins(16, 16, 16, 16)
+            }
+            text = message
+            setTypeface(null, Typeface.BOLD)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        }
+        return textView
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

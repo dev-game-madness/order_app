@@ -141,6 +141,25 @@
                 android:inputType="number" />
 
             <TextView
+                android:id="@+id/textLabelAddressOrder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Адрес заказа" />
+
+            <EditText
+                android:id="@+id/addressOrder"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:ems="10"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="top"
+                android:hint="Введите адрес"
+                android:inputType="text" />
+
+            <TextView
                 android:id="@+id/textLabelNewOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

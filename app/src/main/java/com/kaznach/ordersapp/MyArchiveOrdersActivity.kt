@@ -30,8 +30,7 @@ data class MyArchiveOrder(
     val order_deadline: Int,
     val order_budget: Int,
     val order_create: String,
-    val order_region: String,
-    val order_city: String
+    val order_address: String
 )
 
 class MyArchiveOrdersActivity : AppCompatActivity() {
@@ -39,7 +38,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.my_archive_orders_page)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myArchiveOrderPage)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myArchiveOrdersPage)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
@@ -87,8 +86,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
                             orderObject.getInt("order_deadline"),
                             orderObject.getInt("order_budget"),
                             orderObject.getString("order_create"),
-                            orderObject.getString("order_region"),
-                            orderObject.getString("order_city")
+                            orderObject.getString("order_address")
                         )
                         val orderView = createOrderView(order)
                         ordersContainer.addView(orderView)
@@ -137,7 +135,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
         innerLayout.addView(idTextView)
 
         val regionTextView = TextView(this)
-        regionTextView.text = "${order.order_region}, ${order.order_city}"
+        regionTextView.text = "${order.order_address}"
         innerLayout.addView(regionTextView)
 
         val categoryTextView = TextView(this)
@@ -167,8 +165,7 @@ class MyArchiveOrdersActivity : AppCompatActivity() {
             intent.putExtra("order_deadline", order.order_deadline)
             intent.putExtra("order_budget", order.order_budget)
             intent.putExtra("order_create", order.order_create)
-            intent.putExtra("order_region", order.order_region)
-            intent.putExtra("order_city", order.order_city)
+            intent.putExtra("order_region", order.order_address)
 
             startActivity(intent)
         }

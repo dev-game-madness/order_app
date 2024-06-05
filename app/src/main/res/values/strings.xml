@@ -20,6 +20,7 @@
 
     <string name="no_internet_message">Нет подключения к Интернету</string>
     <string name="server_error_message">Нет связи с сервером</string>
+    <string name="server_orders_message">Нет заказов</string>
 
 
 </resources>

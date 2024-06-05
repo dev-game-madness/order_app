@@ -25,7 +25,7 @@ class MainNavbar(private val activity: Activity) : View.OnClickListener {
                 activity.startActivity(intent)
             }
             R.id.nav_myorders -> {
-                val intent = Intent(activity, MyOrderActivity::class.java)
+                val intent = Intent(activity, MyOrdersActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                 activity.startActivity(intent)
                 true

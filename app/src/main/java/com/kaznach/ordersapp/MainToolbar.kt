@@ -28,7 +28,7 @@ object MainToolbar {
                 true
             }
             R.id.ItemMyOrders -> {
-                val intent = Intent(activity, MyOrderActivity::class.java)
+                val intent = Intent(activity, MyOrdersActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                 activity.startActivity(intent)
                 true
@@ -40,7 +40,6 @@ object MainToolbar {
                 true
             }
             R.id.ItemExit -> {
-                closeSession(activity)
                 logoutUser(activity)
                 val intent = Intent(activity, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -48,25 +47,6 @@ object MainToolbar {
                 true
             }
             else -> false
-        }
-    }
-
-    private fun closeSession(context: Context) {
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val sharedPrefs = EncryptedSharedPreferences.create(
-            "auth",
-            masterKeyAlias,
-            context.applicationContext,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        val token = sharedPrefs.getString("token", null)
-
-        if (token != null) {
-            Fuel.put(ApiConstants.URLS["users/logout"].toString())
-                .header("Authorization" to "Bearer $token")
-                .timeout(3000)
-                .response { _, _, _ -> }
         }
     }
 

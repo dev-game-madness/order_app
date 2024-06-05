@@ -75,8 +75,8 @@ class LoginActivity : AppCompatActivity() {
                 when (result) {
                     is Result.Failure -> {
                         when (response.statusCode) {
-                            401 -> runOnUiThread { SnackbarHelper.showSnackbar(this, "Неверный логин или пароль", Snackbar.LENGTH_LONG, "ERROR") }
-                            409 -> runOnUiThread{ SnackbarHelper.showSnackbar(this, "Пользователя с такой почтой не существует", Snackbar.LENGTH_LONG, "ERROR") }
+                            409 -> runOnUiThread { SnackbarHelper.showSnackbar(this, "Неверный логин или пароль", Snackbar.LENGTH_LONG, "ERROR") }
+                            404 -> runOnUiThread { SnackbarHelper.showSnackbar(this, "Пользователя с такой почтой не существует", Snackbar.LENGTH_LONG, "ERROR") }
                             else -> {
                                 val ex = result.getException()
                                 val errorData = ex.response.data

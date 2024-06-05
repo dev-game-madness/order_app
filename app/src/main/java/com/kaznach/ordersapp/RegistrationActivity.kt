@@ -84,7 +84,7 @@ class RegistrationActivity : AppCompatActivity() {
                             else -> {
                                 val errorMessage = "Непредвиденная ошибка ${response.data}. Код ответа: ${response.statusCode}"
                                 Log.w("Fuel", errorMessage)
-                                runOnUiThread { SnackbarHelper.showSnackbar(this, "Ошибка регистрации. Код: ${response.statusCode}", Snackbar.LENGTH_LONG, "ERROR") }
+                                runOnUiThread { SnackbarHelper.showSnackbar(this, "Ошибка регистрации. Код: ${errorMessage}", Snackbar.LENGTH_LONG, "ERROR") }
                             }
                         }
                     }
@@ -98,7 +98,6 @@ class RegistrationActivity : AppCompatActivity() {
                                 }
                             }
                         }
-
                     }
                 }
             }

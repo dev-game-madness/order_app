@@ -64,6 +64,7 @@ class CreateOrderActivity : AppCompatActivity() {
         val subCategoryNewOrder: Spinner = findViewById(R.id.subCategoryNewOrder)
         val dateNewOrder: EditText = findViewById(R.id.dateNewOrder)
         val budgetNewOrder: EditText = findViewById(R.id.budgetNewOrder)
+        val addressOrder: EditText = findViewById(R.id.addressOrder)
         val newOrder: EditText = findViewById(R.id.newOrder)
 
         // Получаем список основных категорий
@@ -117,6 +118,7 @@ class CreateOrderActivity : AppCompatActivity() {
             nameNewOrder,
             dateNewOrder,
             budgetNewOrder,
+            addressOrder,
             newOrder
         )
 
@@ -141,13 +143,14 @@ class CreateOrderActivity : AppCompatActivity() {
             val subCategory = subCategoryNewOrder.selectedItem.toString()
             val date = dateNewOrder.text.toString()
             val budget = budgetNewOrder.text.toString()
+            val address = addressOrder.text.toString()
             val description = newOrder.text.toString()
 
-            createOrder(name, mainCategory, subCategory, date, budget, description)
+            createOrder(name, mainCategory, subCategory, date, budget, address, description)
         }
      }
 
-    private fun createOrder(name: String, mainCategory: String, subCategory: String, date: String, budget: String, description: String) {
+    private fun createOrder(name: String, mainCategory: String, subCategory: String, date: String, budget: String, address: String, description: String) {
 
         val body = """
                 {
@@ -156,6 +159,7 @@ class CreateOrderActivity : AppCompatActivity() {
                   "subCategory": "${subCategory}",
                   "date": "${date}",
                   "budget": "${budget}",
+                  "address": "${address}",
                   "description": "${description}"
                 }
                 """.trimIndent()
@@ -169,7 +173,7 @@ class CreateOrderActivity : AppCompatActivity() {
                 runOnUiThread {
                     val dialog = Dialog(this)
                     dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-                    dialog.setContentView(R.layout.create_oreder_dialog)
+                    dialog.setContentView(R.layout.create_order_dialog)
                     dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                     dialog.setCanceledOnTouchOutside(false)
                     dialog.setCancelable(false)

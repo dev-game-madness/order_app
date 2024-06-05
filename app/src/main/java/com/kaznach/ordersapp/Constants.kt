@@ -1,6 +1,6 @@
 package com.kaznach.ordersapp
 object ApiConstants {
-    private const val SERVER_ADDRESS = "http://192.168.1.104:"
+    private const val SERVER_ADDRESS = "http://192.168.0.108:"
     private const val API_VERSION = "api/v1/"
 
 //    private val PORTS = mapOf(

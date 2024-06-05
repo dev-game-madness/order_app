@@ -10,7 +10,7 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.github.kittinunf.fuel.core.Method
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
 import org.json.JSONObject
 
 data class MyOrder(
@@ -31,16 +32,18 @@ data class MyOrder(
     val order_deadline: Int,
     val order_budget: Int,
     val order_create: String,
-    val order_region: String,
-    val order_city: String
+    val order_address: String
 )
 
-class MyOrderActivity : AppCompatActivity() {
+class MyOrdersActivity : AppCompatActivity() {
+
+    private lateinit var activeOrdersContainer: LinearLayout
+    private lateinit var archiveOrdersContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.my_order_page)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myOrderPage)) { v, insets ->
+        setContentView(R.layout.my_orders_page)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.myOrdersPage)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
@@ -55,24 +58,40 @@ class MyOrderActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.nav_myorders).setOnClickListener(navbarClickListener)
         findViewById<LinearLayout>(R.id.nav_profile).setOnClickListener(navbarClickListener)
 
-        val archiveOrderButton: Button = findViewById(R.id.myArchiveOrderButton)
-        archiveOrderButton.setOnClickListener {
-            val intent = Intent(this, MyArchiveOrdersActivity::class.java)
-            startActivity(intent)
-        }
+        activeOrdersContainer = findViewById(R.id.activeOrdersContainer)
+        archiveOrdersContainer = findViewById(R.id.archiveOrdersContainer)
+
+        val tabLayout: TabLayout = findViewById(R.id.tabLayout)
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> {
+                        activeOrdersContainer.visibility = View.VISIBLE
+                        archiveOrdersContainer.visibility = View.GONE
+                    }
+                    1 -> {
+                        activeOrdersContainer.visibility = View.GONE
+                        archiveOrdersContainer.visibility = View.VISIBLE
+                    }
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
 
         val connectionAndAuthManager = ConnectAndTokenManager(this, this)
         connectionAndAuthManager.checkConnectionAndToken { success ->
             if (success) {
-                loadOrdersData()
+                loadActiveOrdersData()
+                loadArchiveOrdersData()
             } else {
                 // Отображение ошибки (уже обрабатывается в ConnectAndTokenManager)
             }
         }
     }
 
-    private fun loadOrdersData() {
-        val ordersContainer: LinearLayout = findViewById(R.id.myOrdersContainer)
+    private fun loadActiveOrdersData() {
         val getRequest = ApiRequestConstructor(
             context = this,
             endpoint = "orders/myorders",
@@ -93,35 +112,70 @@ class MyOrderActivity : AppCompatActivity() {
                             orderObject.getInt("order_deadline"),
                             orderObject.getInt("order_budget"),
                             orderObject.getString("order_create"),
-                            orderObject.getString("order_region"),
-                            orderObject.getString("order_city")
+                            orderObject.getString("order_address")
                         )
                         val orderView = createOrderView(order)
-                        ordersContainer.addView(orderView)
+                        activeOrdersContainer.addView(orderView)
                     }
                     Log.d("API", "Успешный GET запрос: $data")
                 }
             },
             onFailure = { errorMessage, statusCode ->
                 runOnUiThread {
-                    when (statusCode) {
-                        404 -> {
-                            val message = "Нет созданных заказов"
-
-                            SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
-                        }
-                        else -> {
-                            val message = "Ошибка получения данных о заказах. Код: $statusCode"
-                            SnackbarHelper.showSnackbar(this, message, Snackbar.LENGTH_LONG, "ERROR")
-                        }
+                    val message = when (statusCode) {
+                        404 -> "Нет активных заказов"
+                        else -> "Ошибка получения данных о заказах: Код $statusCode"
                     }
-                    Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
+                    activeOrdersContainer.addView(emptyOrders(message))
                 }
+                Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
             }
         )
         getRequest.execute()
     }
 
+    private fun loadArchiveOrdersData() {
+        val getRequest = ApiRequestConstructor(
+            context = this,
+            endpoint = "orders/myarchiveorders",
+            method = Method.GET,
+            onSuccess = { data ->
+                runOnUiThread {
+                    val jsonObject = JSONObject(data)
+                    val ordersArray = jsonObject.getJSONArray("orders")
+
+                    for (i in 0 until ordersArray.length()) {
+                        val orderObject = ordersArray.getJSONObject(i)
+                        val order = MyOrder(
+                            orderObject.getInt("id"),
+                            orderObject.getString("order_name"),
+                            orderObject.getString("order"),
+                            orderObject.getString("category"),
+                            orderObject.getString("subcategory"),
+                            orderObject.getInt("order_deadline"),
+                            orderObject.getInt("order_budget"),
+                            orderObject.getString("order_create"),
+                            orderObject.getString("order_address")
+                        )
+                        val orderView = createOrderView(order)
+                        archiveOrdersContainer.addView(orderView)
+                    }
+                    Log.d("API", "Успешный GET запрос: $data")
+                }
+            },
+            onFailure = { errorMessage, statusCode ->
+                runOnUiThread {
+                    val message = when (statusCode) {
+                        404 -> "Нет заказов в архиве"
+                        else -> "Ошибка получения данных о заказах: Код $statusCode"
+                    }
+                    archiveOrdersContainer.addView(emptyOrders(message))
+                }
+                Log.e("API", "Ошибка GET запроса: $errorMessage, код: $statusCode")
+            }
+        )
+        getRequest.execute()
+    }
 
     private fun createOrderView(order: MyOrder): View {
         val orderLayout = CardView(this)
@@ -149,7 +203,7 @@ class MyOrderActivity : AppCompatActivity() {
         innerLayout.addView(idTextView)
 
         val regionTextView = TextView(this)
-        regionTextView.text = "${order.order_region}, ${order.order_city}"
+        regionTextView.text = "${order.order_address}"
         innerLayout.addView(regionTextView)
 
         val categoryTextView = TextView(this)
@@ -157,7 +211,8 @@ class MyOrderActivity : AppCompatActivity() {
         innerLayout.addView(categoryTextView)
 
         val budgetAndDeadlineTextView = TextView(this)
-        budgetAndDeadlineTextView.text = "\nБюджет: ${order.order_budget} рублей\nСрок выполенния: ${order.order_deadline} дней"
+        budgetAndDeadlineTextView.text =
+            "\nБюджет: ${order.order_budget} рублей\nСрок выполенния: ${order.order_deadline} дней"
         innerLayout.addView(budgetAndDeadlineTextView)
 
         val createTextView = TextView(this)
@@ -179,14 +234,29 @@ class MyOrderActivity : AppCompatActivity() {
             intent.putExtra("order_deadline", order.order_deadline)
             intent.putExtra("order_budget", order.order_budget)
             intent.putExtra("order_create", order.order_create)
-            intent.putExtra("order_region", order.order_region)
-            intent.putExtra("order_city", order.order_city)
+            intent.putExtra("order_address", order.order_address)
 
             startActivity(intent)
         }
         innerLayout.addView(button)
 
         return orderLayout
+    }
+
+    private fun emptyOrders(message: String): View {
+        val textView = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+                setMargins(16, 16, 16, 16)
+            }
+            text = message
+            setTypeface(null, Typeface.BOLD)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        }
+        return textView
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
