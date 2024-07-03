@@ -13,8 +13,7 @@ class OrderDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.order_details_page)
         val ordersContainer: LinearLayout = findViewById(R.id.detailsOrderContainer)
-
-        // Получаем информацию о заказе из Intent
+        
         val orderId = intent.getIntExtra("order_id", 0)
         val orderName = intent.getStringExtra("order_name") ?: ""
         val orderDescription = intent.getStringExtra("order_description") ?: ""
